@@ -1,0 +1,71 @@
+services:
+  api:
+    build: .
+    image: bestbuy-scraper-api
+    platform: linux/amd64
+    container_name: bestbuy-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Talk to the postgres service over the compose network.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD:-scraper}@postgres:5432/${POSTGRES_DB:-bestbuy}
+      SCRAPER_HEADLESS: "true"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    shm_size: 1gb  # Chromium crashes with Docker's default 64MB /dev/shm
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Scrape workers: same image, different command. Scale horizontally with
+  #   docker compose up -d --scale worker=4
+  # Each replica runs WORKER_CONCURRENCY browsers; all pull from the Postgres queue.
+  worker:
+    image: bestbuy-scraper-api
+    command: ["python", "-m", "app.worker"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scraper}:${POSTGRES_PASSWORD:-scraper}@postgres:5432/${POSTGRES_DB:-bestbuy}
+      SCRAPER_HEADLESS: "true"
+    shm_size: 2gb  # several Chromium instances per replica
+    stop_grace_period: 2m  # let in-flight pages finish; unfinished ones are requeued
+    healthcheck:
+      disable: true
+    depends_on:
+      api:
+        condition: service_healthy  # the API applies database migrations on startup
+
+  frontend:
+    build: ./frontend
+    image: bestbuy-scraper-frontend
+    container_name: bestbuy-frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://api:8000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: bestbuy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scraper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scraper}
+      POSTGRES_DB: ${POSTGRES_DB:-bestbuy}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

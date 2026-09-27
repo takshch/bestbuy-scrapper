@@ -1,0 +1,10 @@
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29
+sqlalchemy[asyncio]>=2.0.29
+asyncpg>=0.29
+pydantic>=2.6
+pydantic-settings>=2.2
+python-dotenv>=1.0
+selenium>=4.20
+cloakbrowser>=0.5.11
+alembic>=1.13

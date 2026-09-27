@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><title>laptop - Best Buy</title></head>
+<body>
+<ol class="sku-item-list">
+  <!-- Rendered card: DOM has data, Apollo cache has fuller/fresher data. -->
+  <li data-product-id="1111" class="product-list-item grid-view">
+    <div class="sku-block">
+      <a class="product-list-item-link" href="/product/hp-14-laptop/JJ1/sku/1111">
+        <h3 class="product-title" title="HP - 14&quot; Laptop - Silver"><span>HP</span> - 14" Laptop - Silver</h3>
+      </a>
+      <img data-testid="product-image" src="https://pisces.bbystatic.com/image2/1111.jpg;maxHeight=427">
+      <div class="c-ratings-reviews"><p class="visually-hidden">Rating 4.4 out of 5 stars with 1,103 reviews</p></div>
+      <div data-testid="price-block-customer-price"><span class="sr-only">$249.99</span></div>
+      <button data-testid="plp-add-to-cart-1111">Add to Cart</button>
+    </div>
+  </li>
+  <!-- Sponsored duplicate of the same SKU. -->
+  <li class="slContainer"><div data-product-id="1111" class="product-list-item grid-view"></div></li>
+  <!-- Skeleton card that never rendered: only the Apollo cache knows it. -->
+  <li data-product-id="2222" class="product-list-item grid-view"><div class="skeleton-product-grid-view"></div></li>
+  <!-- Rendered card the cache doesn't know (DOM-only fallback). -->
+  <li data-product-id="3333" class="product-list-item grid-view">
+    <a class="product-list-item-link" href="https://www.bestbuy.com/product/dell-xps/JJ3/sku/3333">
+      <h3 class="product-title">Dell - XPS 13</h3></a>
+    <div data-testid="price-block-customer-price"><span class="sr-only">$1,299.00</span></div>
+    <div data-testid="price-block-savings">Save $200 Was $1,499.00</div>
+    <button data-testid="plp-sold-out-3333">Sold Out</button>
+  </li>
+</ol>
+<!-- Recommendation carousel: not a search result, must be ignored. -->
+<ul><li class="item c-carousel-item" data-product-id="9999"><a class="sku-title" href="/x">Carousel item</a></li></ul>
+<script>
+  const priceKey = 'price({"input":{"context":"plp"}})';
+  const state = {
+    'Product:{"skuId":"1111","openBoxCondition":null}': {
+      __typename: 'Product', skuId: '1111',
+      name: {__typename: 'ProductName', short: 'HP - 14" Laptop - Silver'},
+      url: {__typename: 'ProductUrl', skuSpecificUrl: 'https://www.bestbuy.com/product/hp-14-laptop/JJ1/sku/1111'},
+      [priceKey]: {__ref: 'ItemPrice:1111'},
+      reviewInfo: {averageRating: 4.4, reviewCount: 1103},
+      primaryImage: {piscesHref: 'https://pisces.bbystatic.com/image2/1111.jpg'},
+      manufacturer: {modelNumber: '14-dq6105dx'},
+    },
+    'ItemPrice:1111': {customerPrice: 229.99, displayableRegularPrice: 349.99},
+    'Product:{"skuId":"2222","openBoxCondition":null}': {
+      __typename: 'Product', skuId: '2222',
+      name: {short: 'Lenovo - Yoga 7i'},
+      url: {pdp: 'https://www.bestbuy.com/product/lenovo-yoga/JJ2'},
+      [priceKey]: {customerPrice: 799.99, displayableRegularPrice: 799.99},
+      reviewInfo: {averageRating: 4.7, reviewCount: 92},
+      modelNumber: '83TC0003US',
+    },
+    // Open-box variant of 1111 must not pollute the new-condition data.
+    'Product:{"skuId":"1111","openBoxCondition":"EXCELLENT"}': {skuId: '1111', [priceKey]: {customerPrice: 1.0}},
+    'Product:{"skuId":"9999","openBoxCondition":null}': {skuId: '9999', name: {short: 'Carousel item'}},
+  };
+  window[Symbol.for('ApolloClientSingleton')] = {cache: {extract: () => state}};
+</script>
+</body></html>
